@@ -1,34 +1,30 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
-import { useState } from "react";
 
-export default function AdminLayout() {
-  const { t } = useTranslation();
+export default function TeacherLayout() {
   const { user, logout } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("dashboard");
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login");
+    navigate("/teacher/login");
   };
 
-  const isSuper = !!user?.isSuperAdmin;
-  const perms = user?.permissions || [];
-  const has = (p) => isSuper || perms.includes(p);
+  const selectSection = (section) => {
+    setActiveSection(section);
+    setOpen(false);
+  };
 
-  const allLinks = [
-    { to: "/admin/dashboard", label: t("admin.dashboard"), icon: "📊", show: true },
-    { to: "/admin/applications", label: t("admin.applications"), icon: "📝", show: has("applications") },
-    { to: "/admin/students", label: t("admin.students"), icon: "🎓", show: has("students") },
-    { to: "/admin/courses", label: t("admin.courses"), icon: "📚", show: isSuper },
-    { to: "/admin/teachers", label: t("admin.teachers"), icon: "👨‍🏫", show: has("teachers") },
-    { to: "/admin/admins", label: "Adminlar", icon: "🛡️", show: isSuper }
+  const menuItems = [
+    { label: "Dashboard", icon: "📊", id: "dashboard" },
+    { label: "Guruhlar", icon: "🧩", id: "groups" },
+    { label: "Talabalar", icon: "🎓", id: "students" }
   ];
-  const links = allLinks.filter((l) => l.show);
 
   return (
     <div className="min-h-screen flex bg-slate-50 dark:bg-slate-950">
@@ -39,27 +35,27 @@ export default function AdminLayout() {
             <span>ZAMAXSHAR</span>
           </div>
         </div>
+
         <nav className="flex-1 p-3 space-y-1">
-          {links.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
-                  isActive
-                    ? "bg-brand-600 text-white shadow-lg shadow-brand-600/20"
-                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`
-              }
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => selectSection(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition ${
+                activeSection === item.id
+                  ? "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
             >
-              <span>{l.icon}</span>
-              {l.label}
-            </NavLink>
+              <span>{item.icon}</span>
+              {item.label}
+            </button>
           ))}
         </nav>
+
         <div className="p-3 border-t border-slate-200 dark:border-slate-800">
-          <button onClick={handleLogout} className="w-full btn-secondary text-sm">{t("auth.logout")}</button>
+          <button onClick={handleLogout} className="w-full btn-secondary text-sm">Chiqish</button>
         </div>
       </aside>
 
@@ -73,7 +69,7 @@ export default function AdminLayout() {
         </header>
 
         <main className="flex-1 p-4 sm:p-6 overflow-x-auto">
-          <Outlet />
+          <Outlet context={{ activeSection }} />
         </main>
       </div>
     </div>

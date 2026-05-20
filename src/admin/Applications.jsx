@@ -10,12 +10,29 @@ const STATUS_COLORS = {
   converted_to_student: "bg-violet-100 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300"
 };
 
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+const addDaysISO = (dateStr, days) => {
+  const date = new Date(dateStr);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
 export default function Applications() {
   const { t } = useTranslation();
   const [apps, setApps] = useState([]);
   const [convertId, setConvertId] = useState(null);
   const [teachers, setTeachers] = useState([]);
-  const [convertForm, setConvertForm] = useState({ password: "12345", teacher: "", validFrom: "", validUntil: "" });
+  const [selectedCourseTitle, setSelectedCourseTitle] = useState("");
+  const [convertForm, setConvertForm] = useState({
+    password: "12345",
+    teacher: "",
+    group: "",
+    lessonStartTime: "",
+    lessonEndTime: "",
+    validFrom: todayISO(),
+    validUntil: addDaysISO(todayISO(), 30)
+  });
 
   const load = async () => {
     try {
@@ -26,8 +43,41 @@ export default function Applications() {
 
   useEffect(() => {
     load();
-    api.get("/teachers").then((r) => setTeachers(r.data)).catch(() => {});
   }, []);
+
+  const loadTeachersForCourse = async (courseTitle) => {
+    try {
+      const { data } = await api.get("/teachers", { params: { subject: courseTitle } });
+      setTeachers(data);
+      setConvertForm((s) => ({
+        ...s,
+        teacher: data[0]?._id || ""
+      }));
+    } catch {
+      setTeachers([]);
+      setConvertForm((s) => ({
+        ...s,
+        teacher: ""
+      }));
+    }
+  };
+
+  const openConvert = async (app) => {
+    const start = todayISO();
+    const courseTitle = app.course?.titleUz || "";
+    setSelectedCourseTitle(courseTitle);
+    setConvertId(app._id);
+    setConvertForm({
+      password: "12345",
+      teacher: "",
+      group: "",
+      lessonStartTime: "",
+      lessonEndTime: "",
+      validFrom: start,
+      validUntil: addDaysISO(start, 30)
+    });
+    await loadTeachersForCourse(courseTitle);
+  };
 
   const updateStatus = async (id, status) => {
     try {
@@ -99,7 +149,12 @@ export default function Applications() {
                       </>
                     )}
                     {a.status === "accepted" && (
-                      <button onClick={() => { setConvertId(a._id); setConvertForm({ password: "12345", teacher: "", validFrom: new Date().toISOString().slice(0,10), validUntil: "" }); }} className="text-violet-600 hover:underline">→ Student</button>
+                      <button
+                        onClick={() => openConvert(a)}
+                        className="text-violet-600 hover:underline"
+                      >
+                        → Student
+                      </button>
                     )}
                     <button onClick={() => remove(a._id)} className="text-slate-500 hover:text-rose-600">🗑</button>
                   </td>
@@ -117,6 +172,9 @@ export default function Applications() {
         <div className="fixed inset-0 bg-black/50 z-50 grid place-items-center p-4" onClick={() => setConvertId(null)}>
           <form onClick={(e) => e.stopPropagation()} onSubmit={convert} className="card p-6 w-full max-w-md space-y-4">
             <h3 className="text-lg font-bold">Studentga aylantirish</h3>
+            <div className="text-sm text-slate-500">
+              Fan: <span className="font-semibold text-slate-700 dark:text-slate-200">{selectedCourseTitle || "—"}</span>
+            </div>
             <div>
               <label className="label block mb-1">Parol</label>
               <input className="input" required value={convertForm.password} onChange={(e) => setConvertForm({ ...convertForm, password: e.target.value })} />
@@ -125,13 +183,61 @@ export default function Applications() {
               <label className="label block mb-1">Ustoz</label>
               <select className="input" required value={convertForm.teacher} onChange={(e) => setConvertForm({ ...convertForm, teacher: e.target.value })}>
                 <option value="">—</option>
-                {teachers.map((tc) => <option key={tc._id} value={tc._id}>{tc.name}</option>)}
+                {teachers.map((tc) => (
+                  <option key={tc._id} value={tc._id}>
+                    {tc.name}{tc.subject ? ` (${tc.subject})` : ""}
+                  </option>
+                ))}
               </select>
+              {teachers.length === 0 && (
+                <p className="mt-1 text-xs text-rose-500">Bu fan bo'yicha faol ustoz topilmadi.</p>
+              )}
+            </div>
+            <div>
+              <label className="label block mb-1">Guruh</label>
+              <input
+                className="input"
+                placeholder="Masalan: 1-guruh"
+                value={convertForm.group}
+                onChange={(e) => setConvertForm({ ...convertForm, group: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label block mb-1">Boshlanish vaqti</label>
+                <input
+                  type="time"
+                  className="input"
+                  value={convertForm.lessonStartTime}
+                  onChange={(e) => setConvertForm({ ...convertForm, lessonStartTime: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="label block mb-1">Tugash vaqti</label>
+                <input
+                  type="time"
+                  className="input"
+                  value={convertForm.lessonEndTime}
+                  onChange={(e) => setConvertForm({ ...convertForm, lessonEndTime: e.target.value })}
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label block mb-1">Boshlanish</label>
-                <input type="date" className="input" value={convertForm.validFrom} onChange={(e) => setConvertForm({ ...convertForm, validFrom: e.target.value })} />
+                <input
+                  type="date"
+                  className="input"
+                  value={convertForm.validFrom}
+                  onChange={(e) => {
+                    const start = e.target.value;
+                    setConvertForm((s) => ({
+                      ...s,
+                      validFrom: start,
+                      validUntil: start ? addDaysISO(start, 30) : s.validUntil
+                    }));
+                  }}
+                />
               </div>
               <div>
                 <label className="label block mb-1">Tugash</label>

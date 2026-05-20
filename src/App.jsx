@@ -6,6 +6,7 @@ import CourseDetail from "./pages/CourseDetail.jsx";
 import Teachers from "./pages/Teachers.jsx";
 import Register from "./pages/Register.jsx";
 import Contact from "./pages/Contact.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
 
 import AdminLogin from "./admin/AdminLogin.jsx";
 import AdminLayout from "./admin/AdminLayout.jsx";
@@ -18,6 +19,9 @@ import AdminsManage from "./admin/AdminsManage.jsx";
 
 import StudentLogin from "./student/StudentLogin.jsx";
 import StudentDashboard from "./student/StudentDashboard.jsx";
+import TeacherLogin from "./teacher/TeacherLogin.jsx";
+import TeacherDashboard from "./teacher/TeacherDashboard.jsx";
+import TeacherLayout from "./teacher/TeacherLayout.jsx";
 
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
@@ -31,6 +35,7 @@ export default function App() {
         <Route path="/teachers" element={<Teachers />} />
         <Route path="/register" element={<Register />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/login" element={<LoginPage />} />
       </Route>
 
       <Route path="/admin/login" element={<AdminLogin />} />
@@ -48,6 +53,13 @@ export default function App() {
       <Route path="/student/login" element={<StudentLogin />} />
       <Route element={<ProtectedRoute role="student" />}>
         <Route path="/student/dashboard" element={<StudentDashboard />} />
+      </Route>
+
+      <Route path="/teacher/login" element={<TeacherLogin />} />
+      <Route element={<ProtectedRoute role="teacher" />}>
+        <Route element={<TeacherLayout />}>
+          <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

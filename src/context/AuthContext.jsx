@@ -28,10 +28,36 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   };
 
-  const loginStudent = async (phone, password) => {
-    const { data } = await api.post("/auth/student/login", { phone, password });
+  const loginStudent = async (username, password) => {
+    const { data } = await api.post("/auth/student/login", { username, password });
     setUser(data.user);
     return data.user;
+  };
+
+  const loginTeacher = async (username, password) => {
+    const { data } = await api.post("/auth/teacher/login", { username, password });
+    setUser(data.user);
+    return data.user;
+  };
+
+  const login = async (username, password) => {
+    const endpoints = [
+      { url: "/auth/admin/login", role: "admin" },
+      { url: "/auth/student/login", role: "student" },
+      { url: "/auth/teacher/login", role: "teacher" },
+    ];
+    for (const ep of endpoints) {
+      try {
+        const { data } = await api.post(ep.url, { username, password });
+        setUser(data.user);
+        return { success: true, role: ep.role, user: data.user };
+      } catch (error) {
+        if (!error.response) {
+          return { success: false, message: "Server bilan aloqa yo'q yoki CORS xatosi" };
+        }
+      }
+    }
+    return { success: false, message: "Login yoki parol noto'g'ri" };
   };
 
   const logout = async () => {
@@ -40,7 +66,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginAdmin, loginStudent, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, login, loginAdmin, loginStudent, loginTeacher, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

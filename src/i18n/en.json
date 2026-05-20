@@ -48,7 +48,7 @@
     "startDate": "Start Date",
     "message": "Message",
     "submit": "Submit",
-    "success": "Your application is received",
+    "success": "Your request has been sent",
     "error": "An error occurred"
   },
   "contact": {
@@ -66,7 +66,15 @@
     "login": "Login",
     "logout": "Logout",
     "adminLogin": "Admin Login",
-    "studentLogin": "Student Login"
+    "studentLogin": "Student Login",
+    "teacherLogin": "Teacher Login",
+    "loginPage": {
+      "title": "Login to System",
+      "subtitle": "Choose your role",
+      "adminRole": "Admin",
+      "studentRole": "Student",
+      "teacherRole": "Teacher"
+    }
   },
   "admin": {
     "dashboard": "Dashboard",
